@@ -87,6 +87,9 @@ const PROJECTS = [
     id: 1,
     title: "Ether Real Estate",
     category: "Web 3.0 / Luxury",
+    description: "A decentralized platform for high-end property transactions, featuring smart contract integration and immersive 3D walkthroughs.",
+    technologies: ["Solidity", "React", "Three.js", "Firebase"],
+    link: "https://ether-luxury.io",
     image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=1000",
     color: "#E2FF45"
   },
@@ -94,6 +97,9 @@ const PROJECTS = [
     id: 2,
     title: "Aura Fragrances",
     category: "E-Commerce / Branding",
+    description: "An ultra-premium e-commerce experience for a luxury fragrance house, focusing on multisensory storytelling through digital design.",
+    technologies: ["Next.js", "Shopify headless", "Motion", "Tailwind"],
+    link: "https://aura-essence.com",
     image: "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=1000",
     color: "#FF4E00"
   },
@@ -101,6 +107,9 @@ const PROJECTS = [
     id: 3,
     title: "Vortex Analytics",
     category: "Fintech / SaaS",
+    description: "Real-time data visualization engine for high-frequency trading firms, processing millions of events per second with sub-millisecond latency.",
+    technologies: ["D3.js", "WebSockets", "Rust", "TypeScript"],
+    link: "https://vortex-app.dev",
     image: "https://images.unsplash.com/photo-1551288049-bbbda536339a?auto=format&fit=crop&q=80&w=1000",
     color: "#00FF00"
   },
@@ -108,6 +117,9 @@ const PROJECTS = [
     id: 4,
     title: "Zenith Architecture",
     category: "Minimal / Portfolio",
+    description: "A minimalist digital monograph for an award-winning architectural firm, emphasizing whitespace and structured typography.",
+    technologies: ["Gatsby", "GraphQL", "Contentful", "Motion"],
+    link: "https://zenith-arch.build",
     image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1000",
     color: "#007AFF"
   }
@@ -141,6 +153,7 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<typeof PROJECTS[0] | null>(null);
   
   // Contact Form State
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
@@ -459,14 +472,17 @@ export default function App() {
             {PROJECTS.map((project, i) => (
               <motion.div
                 key={project.id}
+                layoutId={`card-${project.id}`}
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="group cursor-pointer bg-brand-bg p-8 hover:bg-neutral-100 transition-colors"
+                onClick={() => setSelectedProject(project)}
+                className="group cursor-pointer bg-brand-bg p-8 hover:bg-neutral-100 transition-colors relative"
               >
-                <div className="relative aspect-[16/10] overflow-hidden grayscale hover:grayscale-0 transition-all duration-700 mb-6 border border-brand-primary/10">
+                <div className="relative aspect-[16/10] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700 mb-6 border border-brand-primary/10">
                   <motion.img 
+                    layoutId={`image-${project.id}`}
                     src={project.image} 
                     alt={project.title}
                     whileHover={{ scale: 1.1, y: -20 }}
@@ -474,12 +490,17 @@ export default function App() {
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
+                  <div className="absolute inset-0 bg-brand-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="bg-brand-bg text-brand-primary px-6 py-3 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+                       Explore Detail <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
-                    <div className="font-serif italic text-3xl mb-1">{String(i + 1).padStart(2, '0')}</div>
-                    <h4 className="text-2xl font-bold uppercase tracking-tight">{project.title}</h4>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-2">{project.category}</p>
+                    <motion.div layoutId={`number-${project.id}`} className="font-serif italic text-3xl mb-1">{String(i + 1).padStart(2, '0')}</motion.div>
+                    <motion.h4 layoutId={`title-${project.id}`} className="text-2xl font-bold uppercase tracking-tight">{project.title}</motion.h4>
+                    <motion.p layoutId={`cat-${project.id}`} className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-2">{project.category}</motion.p>
                   </div>
                   <ArrowUpRight className="w-8 h-8 opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -488,6 +509,91 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* Project Detail Modal */}
+      <AnimatePresence>
+        {selectedProject && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-10">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProject(null)}
+              className="absolute inset-0 bg-brand-primary/60 backdrop-blur-md" 
+            />
+            
+            <motion.div 
+              layoutId={`card-${selectedProject.id}`}
+              className="bg-brand-bg w-full max-w-6xl h-full max-h-[90vh] overflow-y-auto relative border-2 border-brand-primary shadow-2xl flex flex-col md:flex-row"
+            >
+              <button 
+                onClick={() => setSelectedProject(null)}
+                className="absolute top-6 right-6 z-20 p-3 bg-brand-bg md:bg-transparent hover:bg-neutral-100 md:hover:bg-brand-primary/10 transition-colors border border-brand-primary md:border-none"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="md:w-1/2 h-80 md:h-full sticky top-0 overflow-hidden">
+                <motion.img 
+                  layoutId={`image-${selectedProject.id}`}
+                  src={selectedProject.image}
+                  alt={selectedProject.title}
+                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              <div className="md:w-1/2 p-8 md:p-16 flex flex-col justify-between">
+                <div>
+                  <motion.div layoutId={`number-${selectedProject.id}`} className="font-serif italic text-4xl mb-4 text-brand-accent">
+                    {String(PROJECTS.indexOf(selectedProject) + 1).padStart(2, '0')}
+                  </motion.div>
+                  
+                  <motion.h4 layoutId={`title-${selectedProject.id}`} className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter mb-4 leading-none">
+                    {selectedProject.title}
+                  </motion.h4>
+                  
+                  <motion.p layoutId={`cat-${selectedProject.id}`} className="text-sm font-bold uppercase tracking-[0.3em] text-neutral-400 mb-10">
+                    {selectedProject.category}
+                  </motion.p>
+
+                  <div className="space-y-12">
+                    <div className="space-y-4">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Mission Overview</div>
+                      <p className="text-lg font-medium leading-relaxed">
+                        {selectedProject.description}
+                      </p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Technologies Utilized</div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProject.technologies.map(tech => (
+                          <span key={tech} className="px-4 py-2 border border-brand-primary text-[10px] font-bold uppercase tracking-widest">
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-16">
+                  <a 
+                    href={selectedProject.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-4 bg-brand-primary text-white px-10 py-5 font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-brand-accent transition-all w-full md:w-auto justify-center"
+                  >
+                    View Project Live
+                    <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Testimonials Section */}
       <section className="py-32 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
