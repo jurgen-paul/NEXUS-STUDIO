@@ -23,6 +23,11 @@ import { useAuth } from "./lib/AuthContext";
 import { auth, db } from "./lib/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { loadStripe } from "@stripe/stripe-js";
+
+// Initialize Stripe with placeholder or environment variable
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+
 
 // Firestore Error Handler as per integration guidelines
 enum OperationType {
@@ -160,6 +165,9 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Stripe State
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
@@ -194,6 +202,30 @@ export default function App() {
     } finally {
       setIsSubmitting(false);
       setTimeout(() => setSubmitStatus('idle'), 5000);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    setIsCheckoutLoading(true);
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId: "nexus_premium_6995" }),
+      });
+      
+      const session = await response.json();
+      if (session.error) throw new Error(session.error);
+
+      const stripe = await stripePromise;
+      const { error } = await (stripe as any).redirectToCheckout({ sessionId: session.id });
+      
+      if (error) console.error(error);
+    } catch (err) {
+      console.error("Checkout failed:", err);
+      alert("Checkout failed. Please ensure STRIPE_SECRET_KEY is configured in the environment.");
+    } finally {
+      setIsCheckoutLoading(false);
     }
   };
 
@@ -667,6 +699,82 @@ export default function App() {
                 </p>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Subscription Section */}
+      <section className="py-32 px-6 bg-neutral-50 border-y-2 border-brand-primary">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
+            <div className="space-y-10">
+              <div className="space-y-4">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">Premium Access</h2>
+                <h3 className="text-5xl md:text-7xl font-serif font-black uppercase tracking-tighter leading-none">
+                  NEXUS<br />
+                  <span className="text-brand-accent italic">UNLIMITED.</span>
+                </h3>
+              </div>
+              <p className="text-lg font-medium leading-relaxed max-w-md">
+                Unlock our full technological suite, priority creative consultation, and enterprise-grade deployment support.
+              </p>
+              <ul className="space-y-4">
+                {[
+                  "Unlimited Project Revisions",
+                  "Priority CI/CD Pipeline Support",
+                  "Direct Access to Lead Architects",
+                  "Bespoke Component Library",
+                  "Advanced AI Model Integration"
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
+                    <CheckCircle2 className="w-4 h-4 text-brand-accent" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-white border-2 border-brand-primary p-12 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <Cpu className="w-32 h-32" />
+              </div>
+              <div className="relative z-10 space-y-10">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-2xl font-bold uppercase tracking-tighter mb-2">The Studio Plan</h4>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Monthly Subscription</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-5xl font-serif font-black">$69.95</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Per Month</div>
+                  </div>
+                </div>
+                
+                <div className="border-t-2 border-brand-primary/5 pt-10">
+                  <button 
+                    disabled={isCheckoutLoading}
+                    onClick={handleSubscribe}
+                    className="w-full bg-brand-primary text-white py-6 font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-brand-accent transition-all disabled:opacity-50"
+                  >
+                    {isCheckoutLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Initializing Secure Checkout...
+                      </>
+                    ) : (
+                      <>
+                        Subscribe Now
+                        <ArrowUpRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[9px] font-medium text-center mt-6 opacity-40 uppercase tracking-widest leading-relaxed">
+                    Secure payment processed via Stripe. Cancel anytime.<br />
+                    Taxes calculated at checkout based on locale.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
