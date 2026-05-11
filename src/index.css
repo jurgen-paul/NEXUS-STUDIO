@@ -1,16 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Bormi:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Georgia", serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Bormi", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-brand-primary: #1a1a1a;
-  --color-brand-accent: #c53030; /* Muted Red */
-  --color-brand-bg: #f5f5f0; /* Cream/Off-white */
-  --color-brand-muted: rgba(26, 26, 26, 0.1);
+  --color-brand-primary: #0A0A0A;
+  --color-brand-accent: #D13B3B; 
+  --color-brand-bg: #F8F8F6;
+  --color-brand-muted: #E5E5E0;
   
   --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 30s linear infinite;
 }
 
 @keyframes float {
@@ -18,18 +20,24 @@
   50% { transform: translateY(-10px); }
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 @layer base {
   body {
     @apply bg-brand-bg text-brand-primary selection:bg-brand-accent selection:text-white;
-    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
-.editorial-tracking {
-  letter-spacing: 0.15em;
+.text-editorial {
+  letter-spacing: -0.02em;
+  line-height: 0.9;
 }
 
-.perspective-1000 {
-  perspective: 1000px;
+.mask-fade-right {
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }

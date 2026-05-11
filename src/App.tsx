@@ -168,6 +168,19 @@ export default function App() {
   // Stripe State
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
+  // Handle Stripe Redirection Results
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success')) {
+      alert("Subscription activated successfully! Welcome to Nexus Studio.");
+      window.history.replaceState({}, document.title, "/");
+    }
+    if (urlParams.get('canceled')) {
+      alert("Checkout canceled. Reach out if you have any questions.");
+      window.history.replaceState({}, document.title, "/");
+    }
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
@@ -254,7 +267,7 @@ export default function App() {
             <span className="font-serif font-bold text-2xl tracking-tighter uppercase cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Nexus Studio.</span>
           </motion.div>
 
-          <div className="hidden md:flex items-center gap-12 font-bold text-[10px] tracking-[0.2em] uppercase">
+          <div className="hidden md:flex items-center gap-12 font-bold text-[11px] tracking-[0.25em] uppercase">
             {["Work", "Studio", "Services", "Contact"].map((item, i) => (
               <motion.a
                 key={item}
@@ -262,9 +275,10 @@ export default function App() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.1 }}
-                className="hover:text-brand-accent transition-colors"
+                className="hover:text-brand-accent transition-all duration-300 relative group"
               >
                 {item}
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-accent transition-all duration-300 group-hover:w-full" />
               </motion.a>
             ))}
           </div>
@@ -403,22 +417,26 @@ export default function App() {
               <motion.h1 
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-[clamp(3rem,10vw,9rem)] font-serif font-black leading-[0.8] tracking-[-0.04em] uppercase"
+                transition={{ delay: 0.2, duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
+                className="text-[clamp(3.5rem,12vw,10rem)] font-serif font-black leading-[0.85] tracking-[-0.04em] uppercase"
               >
-                BUILT<br />
-                FOR<br />
-                <span className="text-brand-accent">SPEED</span>
+                CRAFTING<br />
+                DIGITAL<br />
+                <span className="text-brand-accent italic font-normal tracking-wide">PRECISION.</span>
               </motion.h1>
               
               <motion.div 
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex items-center gap-6"
+                className="flex flex-wrap items-center gap-8"
               >
-                <a href="#work" className="border-2 border-brand-primary text-brand-primary px-10 py-4 rounded-none font-bold uppercase text-xs tracking-widest hover:bg-brand-primary hover:text-white transition-all">
-                  Case Studies
+                <a href="#work" className="group flex items-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-none font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-brand-accent transition-all">
+                  View Case Studies
+                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                </a>
+                <a href="#contact" className="border-b-2 border-brand-primary py-2 font-bold uppercase text-[10px] tracking-[0.2em] hover:border-brand-accent hover:text-brand-accent transition-all">
+                  Start a Project
                 </a>
               </motion.div>
             </div>
@@ -456,16 +474,19 @@ export default function App() {
       </section>
 
       {/* Marquee Section */}
-      <div className="bg-brand-primary py-8 overflow-hidden relative border-y-2 border-brand-primary">
-        <motion.div 
-          animate={{ x: [0, -1000] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-          className="flex whitespace-nowrap gap-20 text-brand-bg font-serif italic text-4xl opacity-20 select-none"
-        >
-          {Array(10).fill("Nexus Studio / Performance Design / Creative Engineering").map((text, i) => (
-            <span key={i}>{text}</span>
+      <div className="bg-brand-primary py-12 overflow-hidden relative border-y-2 border-brand-primary">
+        <div className="flex whitespace-nowrap animate-marquee">
+          {Array(2).fill("Nexus Studio / Performance Design / Creative Engineering / Web 3.0 Architects / Digital Monuments").map((text, i) => (
+            <div key={i} className="flex gap-20 text-brand-bg font-serif font-black italic text-5xl uppercase tracking-tighter mx-10 select-none items-center opacity-80">
+              {text.split(' / ').map((word, j) => (
+                <span key={j} className="flex items-center gap-10">
+                  {word}
+                  <div className="w-3 h-3 bg-brand-accent rounded-full" />
+                </span>
+              ))}
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
 
       {/* Clients Logo Strip */}
@@ -489,43 +510,57 @@ export default function App() {
       </section>
 
       {/* Studio / Methodology Section */}
-      <section id="studio" className="py-32 px-6 bg-brand-bg border-t-2 border-brand-primary">
+      <section id="studio" className="py-40 px-6 bg-brand-bg border-t-2 border-brand-primary relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[40%] h-full border-l border-brand-primary/5 pointer-events-none" />
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-start">
-            <div>
+          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-20 items-start">
+            <div className="sticky top-40">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="space-y-8"
+                className="space-y-10"
               >
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">Our Studio</h2>
-                <h3 className="text-6xl md:text-8xl font-serif font-black uppercase tracking-tighter leading-[0.8] mb-12">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-px bg-brand-accent" />
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-neutral-400">Our Studio</h2>
+                </div>
+                <h3 className="text-7xl md:text-9xl font-serif font-black uppercase tracking-tighter leading-[0.8] mb-12">
                   HOW WE<br />
-                  <span className="text-brand-accent italic">CONSTRUCT.</span>
+                  <span className="text-brand-accent italic font-normal tracking-tight">SOLVE.</span>
                 </h3>
-                <p className="text-xl font-medium leading-relaxed max-w-md opacity-80 uppercase tracking-tight">
-                  At Nexus, we don't just "make" websites. We engineer digital monuments using a rigorous multi-pillar framework designed for the next decade of the web.
+                <p className="text-xl font-medium leading-relaxed max-w-sm opacity-90 uppercase tracking-tight font-sans">
+                  We believe that speed is a design feature. Our methodology combines brutalist technical efficiency with editorial aesthetic grace.
                 </p>
-                <div className="pt-10">
-                  <div className="w-20 h-2 bg-brand-primary" />
+                
+                <div className="grid grid-cols-2 gap-12 pt-12 border-t border-brand-primary/10">
+                  <div>
+                    <div className="text-3xl font-serif italic mb-2">99%</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Core Web Vitals</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-serif italic mb-2">400ms</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Avg. Load Latency</div>
+                  </div>
                 </div>
               </motion.div>
             </div>
             
-            <div className="space-y-24 lg:pt-10 px-4 md:px-0">
+            <div className="space-y-32 lg:pt-10">
                {/* 01 Cloud */}
                <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group border-l-2 border-brand-primary/10 pl-10"
+                className="group relative pl-12 md:pl-20"
                >
-                  <div className="font-serif italic text-5xl text-brand-accent mb-6">01</div>
-                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Cloud Infrastructure</h4>
-                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
-                    Scale your vision with enterprise-grade cloud solutions optimized for speed and reliability. We architect for zero-downtime, edge-cached distribution, and sub-second global persistence.
-                  </p>
+                  <div className="absolute left-0 top-0 font-serif italic text-6xl md:text-8xl text-brand-accent opacity-10 group-hover:opacity-100 transition-opacity duration-700 select-none">01</div>
+                  <div className="relative z-10">
+                    <h4 className="text-4xl font-bold uppercase tracking-tighter mb-6">Cloud Infrastructure</h4>
+                    <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[12px] max-w-md">
+                      Enterprise-grade cloud solutions optimized for speed and reliability. We architect for zero-downtime, edge-cached distribution, and sub-second global persistence.
+                    </p>
+                  </div>
                </motion.div>
 
                {/* 02 Design */}
@@ -534,13 +569,15 @@ export default function App() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="group border-l-2 border-brand-primary/10 pl-10"
+                className="group relative pl-12 md:pl-20"
                >
-                  <div className="font-serif italic text-5xl text-brand-accent mb-6">02</div>
-                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Creative Design</h4>
-                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
-                    Distinctive interfaces that blend art with high-performance engineering. We treat design as an editorial discipline, ensuring every interaction reinforces your brand's digital narrative.
-                  </p>
+                  <div className="absolute left-0 top-0 font-serif italic text-6xl md:text-8xl text-brand-accent opacity-10 group-hover:opacity-100 transition-opacity duration-700 select-none">02</div>
+                  <div className="relative z-10">
+                    <h4 className="text-4xl font-bold uppercase tracking-tighter mb-6">Creative Design</h4>
+                    <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[12px] max-w-md">
+                      Distinctive interfaces that blend art with high-performance engineering. We treat design as an editorial discipline, ensuring every interaction reinforces your brand's digital narrative.
+                    </p>
+                  </div>
                </motion.div>
 
                {/* 03 AI */}
@@ -549,13 +586,15 @@ export default function App() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="group border-l-2 border-brand-primary/10 pl-10"
+                className="group relative pl-12 md:pl-20"
                >
-                  <div className="font-serif italic text-5xl text-brand-accent mb-6">03</div>
-                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">AI Integration</h4>
-                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
-                    Harness the power of LLMs and generative AI to automate and enhance your workflows. We weave intelligence directly into the interface, moving beyond static data to dynamic, agentic interactions.
-                  </p>
+                  <div className="absolute left-0 top-0 font-serif italic text-6xl md:text-8xl text-brand-accent opacity-10 group-hover:opacity-100 transition-opacity duration-700 select-none">03</div>
+                  <div className="relative z-10">
+                    <h4 className="text-4xl font-bold uppercase tracking-tighter mb-6">AI Integration</h4>
+                    <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[12px] max-w-md">
+                      Harness the power of LLMs and generative AI to automate and enhance your workflows. We weave intelligence directly into the interface, moving beyond static data to dynamic, agentic interactions.
+                    </p>
+                  </div>
                </motion.div>
 
                {/* 04 Dev */}
@@ -564,13 +603,15 @@ export default function App() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="group border-l-2 border-brand-primary/10 pl-10"
+                className="group relative pl-12 md:pl-20"
                >
-                  <div className="font-serif italic text-5xl text-brand-accent mb-6">04</div>
-                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Full-Stack Dev</h4>
-                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
-                    End-to-end development using the most modern tech stacks for maximum future-proofing. From React 19 server components to TypeScript-first backends, we build for the 2030s.
-                  </p>
+                  <div className="absolute left-0 top-0 font-serif italic text-6xl md:text-8xl text-brand-accent opacity-10 group-hover:opacity-100 transition-opacity duration-700 select-none">04</div>
+                  <div className="relative z-10">
+                    <h4 className="text-4xl font-bold uppercase tracking-tighter mb-6">Full-Stack Dev</h4>
+                    <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[12px] max-w-md">
+                      End-to-end development using the most modern tech stacks for maximum future-proofing. From React 19 server components to TypeScript-first backends, we build for the 2030s.
+                    </p>
+                  </div>
                </motion.div>
             </div>
           </div>
@@ -618,12 +659,19 @@ export default function App() {
                   </div>
                 </div>
                 <div className="flex justify-between items-end">
-                  <div>
-                    <motion.div layoutId={`number-${project.id}`} className="font-serif italic text-3xl mb-1">{String(i + 1).padStart(2, '0')}</motion.div>
-                    <motion.h4 layoutId={`title-${project.id}`} className="text-2xl font-bold uppercase tracking-tight">{project.title}</motion.h4>
-                    <motion.p layoutId={`cat-${project.id}`} className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mt-2">{project.category}</motion.p>
+                  <div className="space-y-4">
+                    <motion.div layoutId={`number-${project.id}`} className="font-serif italic text-4xl text-brand-accent">{String(i + 1).padStart(2, '0')}</motion.div>
+                    <div>
+                      <motion.h4 layoutId={`title-${project.id}`} className="text-3xl font-bold uppercase tracking-tight leading-none mb-2">{project.title}</motion.h4>
+                      <motion.p layoutId={`cat-${project.id}`} className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">{project.category}</motion.p>
+                    </div>
                   </div>
-                  <ArrowUpRight className="w-8 h-8 opacity-20 group-hover:opacity-100 transition-opacity" />
+                  <motion.div 
+                    whileHover={{ scale: 1.2, rotate: 45 }}
+                    className="p-4 border border-brand-primary/10 rounded-full group-hover:bg-brand-primary group-hover:text-white transition-all duration-500"
+                  >
+                    <ArrowUpRight className="w-6 h-6" />
+                  </motion.div>
                 </div>
               </motion.div>
             ))}
@@ -717,17 +765,23 @@ export default function App() {
       </AnimatePresence>
 
       {/* Testimonials Section */}
-      <section className="py-32 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/5 -skew-x-12 transform translate-x-1/2" />
+      <section className="py-40 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/10 -skew-x-12 transform translate-x-1/2" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-[1fr_2fr] gap-20 items-start">
-            <div className="space-y-8">
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-bg/60">Social Proof</h2>
-              <h3 className="text-5xl md:text-7xl font-serif font-black tracking-tighter uppercase leading-[0.8]">
+          <div className="grid lg:grid-cols-[1fr_2.5fr] gap-24 items-start">
+            <div className="space-y-10 group">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-px bg-brand-accent" />
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-brand-bg/60">Social Proof</h2>
+              </div>
+              <h3 className="text-7xl md:text-9xl font-serif font-black tracking-tighter uppercase leading-[0.8]">
                 VOICES<br />
                 OF<br />
-                <span className="text-brand-accent italic">IMPACT.</span>
+                <span className="text-brand-accent italic font-normal tracking-tight">IMPACT.</span>
               </h3>
+              <div className="pt-10 opacity-40 group-hover:opacity-100 transition-opacity">
+                <Quote className="w-12 h-12 text-brand-accent" />
+              </div>
             </div>
 
             <div className="space-y-px bg-brand-bg/10 border border-brand-bg/10">
@@ -793,21 +847,25 @@ export default function App() {
       </section>
 
       {/* Subscription Section */}
-      <section className="py-32 px-6 bg-neutral-50 border-y-2 border-brand-primary">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="space-y-10">
-              <div className="space-y-4">
-                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">Premium Access</h2>
-                <h3 className="text-5xl md:text-7xl font-serif font-black uppercase tracking-tighter leading-none">
+      <section className="py-40 px-6 bg-white border-y-2 border-brand-primary relative overflow-hidden">
+        <div className="absolute inset-0 bg-brand-primary/[0.02] -skew-y-3 transform scale-110 pointer-events-none" />
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-px bg-brand-accent" />
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-neutral-400">Premium Access</h2>
+                </div>
+                <h3 className="text-7xl md:text-9xl font-serif font-black uppercase tracking-tighter leading-[0.8]">
                   NEXUS<br />
-                  <span className="text-brand-accent italic">UNLIMITED.</span>
+                  <span className="text-brand-accent italic font-normal tracking-tight">UNLIMITED.</span>
                 </h3>
               </div>
-              <p className="text-lg font-medium leading-relaxed max-w-md">
-                Unlock our full technological suite, priority creative consultation, and enterprise-grade deployment support.
+              <p className="text-xl font-medium leading-relaxed max-w-md opacity-70">
+                Unlock our full technological suite, priority creative consultation, and enterprise-grade deployment support. Engineered for those who refuse to compromise.
               </p>
-              <ul className="space-y-4">
+              <div className="space-y-6">
                 {[
                   "Unlimited Project Revisions",
                   "Priority CI/CD Pipeline Support",
@@ -815,52 +873,64 @@ export default function App() {
                   "Bespoke Component Library",
                   "Advanced AI Model Integration"
                 ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest">
-                    <CheckCircle2 className="w-4 h-4 text-brand-accent" />
-                    {feature}
-                  </li>
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center gap-6 group"
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center border border-brand-primary/10 group-hover:border-brand-accent transition-colors">
+                      <CheckCircle2 className="w-4 h-4 text-brand-accent" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-[0.2em]">{feature}</span>
+                  </motion.div>
                 ))}
-              </ul>
+              </div>
             </div>
 
-            <div className="bg-white border-2 border-brand-primary p-12 shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Cpu className="w-32 h-32" />
+            <div className="bg-brand-primary text-brand-bg p-12 md:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] relative overflow-hidden group border-t-8 border-brand-accent">
+              <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-opacity duration-1000 rotate-12">
+                <Cpu className="w-64 h-64" />
               </div>
-              <div className="relative z-10 space-y-10">
-                <div className="flex justify-between items-start">
+              <div className="relative z-10 space-y-12">
+                <div className="flex justify-between items-end border-b border-brand-bg/10 pb-12">
                   <div>
-                    <h4 className="text-2xl font-bold uppercase tracking-tighter mb-2">The Studio Plan</h4>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Monthly Subscription</p>
+                    <h4 className="text-3xl font-bold uppercase tracking-tighter mb-2">The Studio Plan</h4>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-brand-bg/40">Professional Tier</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-5xl font-serif font-black">$69.95</div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Per Month</div>
+                    <div className="text-6xl font-serif font-black">$69.95</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.3em] opacity-40 uppercase">Monthly</div>
                   </div>
                 </div>
                 
-                <div className="border-t-2 border-brand-primary/5 pt-10">
+                <div className="space-y-8">
                   <button 
                     disabled={isCheckoutLoading}
                     onClick={handleSubscribe}
-                    className="w-full bg-brand-primary text-white py-6 font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-4 hover:bg-brand-accent transition-all disabled:opacity-50"
+                    className="w-full bg-brand-bg text-brand-primary py-8 px-10 font-bold uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-6 hover:bg-brand-accent hover:text-white transition-all disabled:opacity-50"
                   >
                     {isCheckoutLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Initializing Secure Checkout...
+                        Verifying Interface...
                       </>
                     ) : (
                       <>
-                        Subscribe Now
-                        <ArrowUpRight className="w-4 h-4" />
+                        Secure Access Now
+                        <ArrowUpRight className="w-5 h-5" />
                       </>
                     )}
                   </button>
-                  <p className="text-[9px] font-medium text-center mt-6 opacity-40 uppercase tracking-widest leading-relaxed">
-                    Secure payment processed via Stripe. Cancel anytime.<br />
-                    Taxes calculated at checkout based on locale.
-                  </p>
+                  <div className="flex items-center justify-center gap-8 opacity-40">
+                    <div className="text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
+                       <Mail className="w-3 h-3" /> Stripe Secure
+                    </div>
+                    <div className="text-[9px] font-bold uppercase tracking-widest flex items-center gap-2">
+                       <CheckCircle2 className="w-3 h-3" /> Cancel Anytime
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -869,101 +939,102 @@ export default function App() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-32 px-6 bg-brand-bg">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-20 items-start">
+      <section id="contact" className="py-40 px-6 bg-brand-bg relative overflow-hidden">
+        <div className="absolute bottom-0 right-0 p-20 opacity-5 pointer-events-none">
+          <Mail className="w-96 h-96 -rotate-12" />
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-start">
             <div className="space-y-12">
-              <h2 className="text-[clamp(2.5rem,7vw,6rem)] font-serif font-black leading-[0.8] tracking-tighter uppercase">
-                HAVE AN IDEA?<br />
-                <span className="text-brand-accent">LET'S BUILD.</span>
-              </h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-neutral-400">
-                  <Mail className="w-5 h-5 text-brand-accent" />
-                  Email
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-px bg-brand-accent" />
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-neutral-400">Collaborate</h2>
                 </div>
-                <p className="text-2xl font-serif italic">hello@nexus.studio</p>
+                <h3 className="text-7xl md:text-9xl font-serif font-black uppercase tracking-tighter leading-[0.8]">
+                  START THE<br />
+                  <span className="text-brand-accent italic font-normal tracking-tight">DIALOGUE.</span>
+                </h3>
               </div>
-              <div className="space-y-4 pt-8">
-                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">Studio Hours</div>
-                <p className="text-sm font-medium uppercase tracking-widest">Mon — Fri: 09:00 — 18:00 GMT</p>
+              <div className="space-y-12">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-6">General Enquiries</div>
+                  <a href="mailto:hello@nexus-studio.io" className="text-3xl md:text-4xl font-serif italic border-b border-brand-primary/20 hover:border-brand-accent transition-colors pb-2">
+                    hello@nexus-studio.io
+                  </a>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-6">Studio Location</div>
+                  <address className="text-xl font-medium not-italic uppercase tracking-tight opacity-70 leading-relaxed">
+                    22 Baker Street, 4th Floor<br />
+                    London, UK NW1 6XE<br />
+                    +44 (0) 20 7946 0123
+                  </address>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white border-2 border-brand-primary p-8 md:p-12 shadow-2xl relative">
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 mb-8 border-b-2 border-brand-primary/10 pb-4">Inquiry Form</div>
-              
-              <form onSubmit={handleContactSubmit} className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Full Name</label>
+            <div className="bg-white border-2 border-brand-primary p-12 md:p-16 shadow-2xl relative">
+              <form onSubmit={handleContactSubmit} className="space-y-12">
+                <div className="grid md:grid-cols-2 gap-10">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Identify Yourself</label>
                     <input 
-                      required
                       type="text" 
-                      placeholder="Jane Doe"
+                      placeholder="Full Name"
+                      required
                       value={contactForm.name}
-                      onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                      className="w-full border-b-2 border-brand-primary/10 py-3 focus:outline-none focus:border-brand-accent transition-colors font-medium text-sm" 
+                      onChange={e => setContactForm({...contactForm, name: e.target.value})}
+                      className="w-full bg-neutral-50 border-b border-brand-primary/10 py-4 px-2 outline-none focus:border-brand-accent transition-colors font-medium text-lg"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Email Address</label>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Digital Address</label>
                     <input 
-                      required
                       type="email" 
-                      placeholder="jane@example.com"
+                      placeholder="email@example.com"
+                      required
                       value={contactForm.email}
-                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                      className="w-full border-b-2 border-brand-primary/10 py-3 focus:outline-none focus:border-brand-accent transition-colors font-medium text-sm" 
+                      onChange={e => setContactForm({...contactForm, email: e.target.value})}
+                      className="w-full bg-neutral-50 border-b border-brand-primary/10 py-4 px-2 outline-none focus:border-brand-accent transition-colors font-medium text-lg"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                   <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Project Mission</label>
-                   <textarea 
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Project Mission</label>
+                  <textarea 
+                    rows={4} 
+                    placeholder="Tell us about the digital monument you wish to construct..."
                     required
-                    rows={4}
-                    placeholder="Tell us about your next big thing..."
                     value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                    className="w-full border-b-2 border-brand-primary/10 py-3 focus:outline-none focus:border-brand-accent transition-colors font-medium text-sm resize-none" 
-                   ></textarea>
+                    onChange={e => setContactForm({...contactForm, message: e.target.value})}
+                    className="w-full bg-neutral-50 border-b border-brand-primary/10 py-4 px-2 outline-none focus:border-brand-accent transition-colors font-medium text-lg resize-none"
+                  />
                 </div>
                 <button 
+                  type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-brand-primary text-white py-5 font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-brand-accent transition-all disabled:opacity-50"
+                  className="group w-full bg-brand-primary text-white py-6 font-bold uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-6 hover:bg-brand-accent transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Sequencing Data...
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Transmitting...
                     </>
                   ) : (
                     <>
-                      Send Message
-                      <Send className="w-4 h-4" />
+                      Send Transmission
+                      <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" />
                     </>
                   )}
                 </button>
-                
                 {submitStatus === 'success' && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-green-50 text-green-800 border border-green-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-3"
+                    className="flex items-center gap-4 text-green-600 font-bold uppercase text-[10px] tracking-widest justify-center mt-6"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Inquiry Received. We will respond shortly.
-                  </motion.div>
-                )}
-                {submitStatus === 'error' && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-red-50 text-red-800 border border-red-200 text-[10px] font-bold uppercase tracking-widest flex items-center gap-3"
-                  >
-                    <X className="w-4 h-4" />
-                    Transmission Interrupted. Please try again.
+                    <CheckCircle2 className="w-5 h-5" /> Transmission Received
                   </motion.div>
                 )}
               </form>
