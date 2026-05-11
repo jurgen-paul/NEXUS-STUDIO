@@ -488,6 +488,95 @@ export default function App() {
         </div>
       </section>
 
+      {/* Studio / Methodology Section */}
+      <section id="studio" className="py-32 px-6 bg-brand-bg border-t-2 border-brand-primary">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-20 items-start">
+            <div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="space-y-8"
+              >
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">Our Studio</h2>
+                <h3 className="text-6xl md:text-8xl font-serif font-black uppercase tracking-tighter leading-[0.8] mb-12">
+                  HOW WE<br />
+                  <span className="text-brand-accent italic">CONSTRUCT.</span>
+                </h3>
+                <p className="text-xl font-medium leading-relaxed max-w-md opacity-80 uppercase tracking-tight">
+                  At Nexus, we don't just "make" websites. We engineer digital monuments using a rigorous multi-pillar framework designed for the next decade of the web.
+                </p>
+                <div className="pt-10">
+                  <div className="w-20 h-2 bg-brand-primary" />
+                </div>
+              </motion.div>
+            </div>
+            
+            <div className="space-y-24 lg:pt-10 px-4 md:px-0">
+               {/* 01 Cloud */}
+               <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="group border-l-2 border-brand-primary/10 pl-10"
+               >
+                  <div className="font-serif italic text-5xl text-brand-accent mb-6">01</div>
+                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Cloud Infrastructure</h4>
+                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
+                    Scale your vision with enterprise-grade cloud solutions optimized for speed and reliability. We architect for zero-downtime, edge-cached distribution, and sub-second global persistence.
+                  </p>
+               </motion.div>
+
+               {/* 02 Design */}
+               <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="group border-l-2 border-brand-primary/10 pl-10"
+               >
+                  <div className="font-serif italic text-5xl text-brand-accent mb-6">02</div>
+                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Creative Design</h4>
+                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
+                    Distinctive interfaces that blend art with high-performance engineering. We treat design as an editorial discipline, ensuring every interaction reinforces your brand's digital narrative.
+                  </p>
+               </motion.div>
+
+               {/* 03 AI */}
+               <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="group border-l-2 border-brand-primary/10 pl-10"
+               >
+                  <div className="font-serif italic text-5xl text-brand-accent mb-6">03</div>
+                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">AI Integration</h4>
+                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
+                    Harness the power of LLMs and generative AI to automate and enhance your workflows. We weave intelligence directly into the interface, moving beyond static data to dynamic, agentic interactions.
+                  </p>
+               </motion.div>
+
+               {/* 04 Dev */}
+               <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="group border-l-2 border-brand-primary/10 pl-10"
+               >
+                  <div className="font-serif italic text-5xl text-brand-accent mb-6">04</div>
+                  <h4 className="text-3xl font-bold uppercase tracking-tighter mb-4">Full-Stack Dev</h4>
+                  <p className="text-neutral-500 font-medium leading-relaxed uppercase tracking-widest text-[11px] max-w-sm">
+                    End-to-end development using the most modern tech stacks for maximum future-proofing. From React 19 server components to TypeScript-first backends, we build for the 2030s.
+                  </p>
+               </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Project Grid */}
       <section id="work" className="py-32 px-6 border-t-2 border-brand-primary">
         <div className="max-w-7xl mx-auto">
