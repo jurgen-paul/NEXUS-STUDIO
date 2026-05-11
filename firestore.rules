@@ -23,6 +23,10 @@ service cloud.firestore {
       return request.resource.data;
     }
 
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
     // 1. Users Collection
     match /users/{userId} {
       function isValidUser(data) {
@@ -34,7 +38,7 @@ service cloud.firestore {
 
       allow get: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidUser(incoming()) 
+      allow update: if isOwner(userId) && isVerified() && isValidUser(incoming()) 
                      && incoming().diff(resource.data).affectedKeys().hasOnly(['displayName']);
     }
 
