@@ -1,6 +1,7 @@
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react";
 import React, { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
   ArrowUpRight, 
   ChevronRight, 
@@ -20,11 +21,15 @@ import {
   Send,
   CheckCircle2,
   Quote,
-  Zap
+  Zap,
+  Copy,
+  Check,
+  CreditCard
 } from "lucide-react";
 import { useAuth } from "./lib/AuthContext";
 import { fetchProjects, CmsProject } from "./services/cms";
 import { auth, db } from "./lib/firebase";
+import Tooltip from "./components/Tooltip";
 import { 
   GoogleAuthProvider, 
   signInWithPopup, 
@@ -35,9 +40,11 @@ import {
 } from "firebase/auth";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import CheckoutForm from "./components/CheckoutForm";
 
 // Initialize Stripe with placeholder or environment variable
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_live_51QexFCQZffAQWpOy18h0MW5ILt5dWWgHtxPu4Of9VWCJnwJL0zsny7caL0C9rmJy9aDLq16srE4sLfzvEytPBFnn00FlLS6VGJ");
 
 
 // Firestore Error Handler as per integration guidelines
@@ -100,7 +107,7 @@ const CLIENTS = [
 
 const PROJECTS = [
   {
-    id: 1,
+    id: "1",
     title: "Ether Real Estate",
     category: "Web 3.0 / Luxury",
     description: "A decentralized platform for high-end property transactions, featuring smart contract integration and immersive 3D walkthroughs.",
@@ -127,7 +134,7 @@ export const PropertyViewer = ({ modelPath }) => {
 };`
   },
   {
-    id: 2,
+    id: "2",
     title: "Aura Fragrances",
     category: "E-Commerce / Branding",
     description: "An ultra-premium e-commerce experience for a luxury fragrance house, focusing on multisensory storytelling through digital design.",
@@ -162,7 +169,7 @@ export const FragranceCard = ({ item }) => {
 };`
   },
   {
-    id: 3,
+    id: "3",
     title: "Vortex Analytics",
     category: "Fintech / SaaS",
     description: "Real-time data visualization engine for high-frequency trading firms, processing millions of events per second with sub-millisecond latency.",
@@ -191,7 +198,7 @@ export const StreamGraph = ({ data }) => {
 };`
   },
   {
-    id: 4,
+    id: "4",
     title: "Zenith Architecture",
     category: "Minimal / Portfolio",
     description: "A minimalist digital monograph for an award-winning architectural firm, emphasizing whitespace and structured typography.",
@@ -226,22 +233,26 @@ const SERVICES = [
   {
     icon: <Globe className="w-6 h-6" />,
     title: "Cloud Infrastructure",
-    description: "Scale your vision with enterprise-grade cloud solutions optimized for speed and reliability."
+    description: "Scale your vision with enterprise-grade cloud solutions optimized for speed and reliability.",
+    tip: "Global deployment architectures"
   },
   {
     icon: <Sparkles className="w-6 h-6" />,
     title: "Creative Design",
-    description: "Distinctive interfaces that blend art with high-performance engineering."
+    description: "Distinctive interfaces that blend art with high-performance engineering.",
+    tip: "Aesthetic precision & brand logic"
   },
   {
     icon: <Cpu className="w-6 h-6" />,
     title: "AI Integration",
-    description: "Harness the power of LLMs and generative AI to automate and enhance your workflows."
+    description: "Harness the power of LLMs and generative AI to automate and enhance your workflows.",
+    tip: "Agentic intelligence workflows"
   },
   {
     icon: <Code2 className="w-6 h-6" />,
     title: "Full-Stack Dev",
-    description: "End-to-end development using the most modern tech stacks for maximum future-proofing."
+    description: "End-to-end development using the most modern tech stacks for maximum future-proofing.",
+    tip: "Technical technical excellence"
   }
 ];
 
@@ -262,13 +273,13 @@ export function VerificationBanner({
     <motion.div 
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="bg-brand-accent text-brand-primary py-2 px-6 flex items-center justify-center gap-6 text-[10px] font-bold uppercase tracking-widest sticky top-0 z-[60] shadow-md"
+      className="bg-brand-accent text-brand-primary py-3 px-6 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-[10px] font-bold uppercase tracking-widest sticky top-0 z-[60] shadow-md text-center sm:text-left"
     >
       <div className="flex items-center gap-2">
-        <Mail className="w-3 h-3" />
+        <Mail className="w-3 h-3 flex-shrink-0" />
         <span>Identity Registry unverified. Link your address to secure your account.</span>
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4 sm:gap-6">
         <button 
           onClick={handleSendVerification}
           disabled={isVerificationSent}
@@ -278,7 +289,7 @@ export function VerificationBanner({
         </button>
         <button 
           onClick={checkVerification}
-          className="bg-brand-primary text-white px-3 py-1 hover:bg-brand-primary/80 transition-colors"
+          className="bg-brand-primary text-white px-3 py-1 hover:bg-brand-primary/80 transition-colors whitespace-nowrap"
         >
           Refresh Status
         </button>
@@ -299,7 +310,8 @@ export function UserProfile({
   setActiveProfileTab,
   stripeSessionId,
   handlePortal,
-  isCheckoutLoading
+  isCheckoutLoading,
+  setNotification
 }: { 
   user: any; 
   isProfileOpen: boolean; 
@@ -313,6 +325,7 @@ export function UserProfile({
   stripeSessionId: string | null;
   handlePortal: () => void;
   isCheckoutLoading: boolean;
+  setNotification: (notif: { message: string; type: 'success' | 'error' | 'info' } | null) => void;
 }) {
   return (
     <AnimatePresence>
@@ -382,7 +395,7 @@ export function UserProfile({
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 p-10 md:p-14 min-h-[400px]">
+            <div className="flex-1 p-6 md:p-10 md:p-14 min-h-[400px]">
               <AnimatePresence mode="wait">
                 {activeProfileTab === 'identity' ? (
                   <motion.div
@@ -469,12 +482,33 @@ export function UserProfile({
                           </button>
                         </div>
                       ) : (
-                        <div className="bg-neutral-50/50 border border-dashed border-brand-primary/20 p-10 text-center space-y-6">
-                           <div className="p-4 bg-brand-primary/5 inline-block rounded-full">
-                             <Cpu className="w-8 h-8 opacity-20" />
-                           </div>
-                           <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 max-w-xs mx-auto">No active subscription sequence detected in this workspace.</p>
-                           <a href="#premium" onClick={() => setIsProfileOpen(false)} className="inline-block text-[10px] font-bold uppercase tracking-widest text-brand-accent hover:underline decoration-2 underline-offset-4">Browse Access Tiers &rarr;</a>
+                        <div className="space-y-10">
+                          <div className="bg-neutral-50/50 border border-dashed border-brand-primary/20 p-10 text-center space-y-6">
+                             <div className="p-4 bg-brand-primary/5 inline-block rounded-full">
+                               <Cpu className="w-8 h-8 opacity-20" />
+                             </div>
+                             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 max-w-xs mx-auto">No active subscription sequence detected in this workspace.</p>
+                             <a href="#premium" onClick={() => setIsProfileOpen(false)} className="inline-block text-[10px] font-bold uppercase tracking-widest text-brand-accent hover:underline decoration-2 underline-offset-4">Browse Access Tiers &rarr;</a>
+                          </div>
+
+                          <div className="pt-10 border-t border-brand-primary/10">
+                            <h5 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-8 flex items-center gap-4">
+                                <CreditCard className="w-4 h-4 text-brand-primary" />
+                                Pre-Authorize Payment Instrument
+                            </h5>
+                            <Elements stripe={stripePromise}>
+                                <CheckoutForm 
+                                    onSuccess={(paymentMethodId) => {
+                                        console.log("Payment method authorized:", paymentMethodId);
+                                        setNotification({ 
+                                            message: "Payment instrument authorized for digital transmission.", 
+                                            type: 'success' 
+                                        });
+                                        // Normally would send to backend to store
+                                    }} 
+                                />
+                            </Elements>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -511,6 +545,17 @@ export default function App() {
   }, []);
   const [projectTab, setProjectTab] = useState<'overview' | 'code'>('overview');
   const [activeProfileTab, setActiveProfileTab] = useState<'identity' | 'subscription'>('identity');
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code registry', err);
+    }
+  };
   
   // Auth State
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -774,80 +819,95 @@ export default function App() {
           </motion.div>
 
           <div className="hidden md:flex items-center gap-12 font-bold text-[11px] tracking-[0.25em] uppercase">
-            {["Work", "Studio", "Services", "Contact"].map((item, i) => (
-              <motion.a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.1 }}
-                className="hover:text-brand-accent transition-all duration-300 relative group"
-              >
-                {item}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-accent transition-all duration-300 group-hover:w-full" />
-              </motion.a>
+            {[
+              { name: "Work", tip: "Explore our portfolio" },
+              { name: "Studio", tip: "Learn our methodology" },
+              { name: "Services", tip: "See what we do" },
+              { name: "Contact", tip: "Get in touch" }
+            ].map((item, i) => (
+              <Tooltip key={item.name} content={item.tip} position="bottom">
+                <motion.a
+                  href={`#${item.name.toLowerCase()}`}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 + i * 0.1 }}
+                  className="hover:text-brand-accent transition-all duration-300 relative group"
+                >
+                  {item.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-accent transition-all duration-300 group-hover:w-full" />
+                </motion.a>
+              </Tooltip>
             ))}
           </div>
 
           {/* Search Bar */}
-          <div className="hidden lg:flex items-center bg-white border border-brand-primary/10 px-4 py-2 gap-3 focus-within:border-brand-accent transition-all">
-            <Search className="w-4 h-4 text-neutral-400" />
-            <input 
-              type="text" 
-              placeholder="Search concepts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-widest w-40 focus:w-60 transition-all placeholder:text-neutral-300"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="p-1 hover:text-brand-accent transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+          <Tooltip content="Search our project registry" position="bottom">
+            <div className="flex items-center bg-white border border-brand-primary/10 px-2 sm:px-4 py-2 gap-2 sm:gap-3 focus-within:border-brand-accent transition-all max-w-[100px] sm:max-w-none">
+              <Search className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-400" />
+              <input 
+                type="text" 
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none outline-none text-[8px] sm:text-[10px] font-bold uppercase tracking-widest w-full sm:w-24 md:w-40 lg:focus:w-60 transition-all placeholder:text-neutral-300"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="p-1 hover:text-brand-accent transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </Tooltip>
 
           <div className="hidden md:flex items-center gap-6">
             {!user ? (
-              <motion.button 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsAuthModalOpen(true)}
-                className="bg-brand-primary text-white px-6 py-2 rounded-none text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-brand-accent transition-all flex items-center gap-2"
-              >
-                Log In
-                <ArrowUpRight className="w-3 h-3" />
-              </motion.button>
+              <Tooltip content="Secure site access" position="bottom">
+                <motion.button 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="bg-brand-primary text-white px-6 py-2 rounded-none text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-brand-accent transition-all flex items-center gap-2"
+                >
+                  Log In
+                  <ArrowUpRight className="w-3 h-3" />
+                </motion.button>
+              </Tooltip>
             ) : (
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setIsProfileOpen(true)}
-                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-neutral-400 group hover:text-brand-primary transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-primary group-hover:border-brand-accent transition-colors">
-                    <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} alt={user.displayName || ''} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </div>
-                  <span className="hidden lg:inline">{user.displayName}</span>
-                </button>
-                <button 
-                  onClick={logout}
-                  className="p-2 hover:text-brand-accent transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                <Tooltip content="Manage your identity" position="bottom">
+                  <button 
+                    onClick={() => setIsProfileOpen(true)}
+                    className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-neutral-400 group hover:text-brand-primary transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-brand-primary group-hover:border-brand-accent transition-colors">
+                      <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} alt={user.displayName || ''} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                    <span className="hidden lg:inline">{user.displayName}</span>
+                  </button>
+                </Tooltip>
+                <Tooltip content="Securely terminate session" position="bottom">
+                  <button 
+                    onClick={logout}
+                    className="p-2 hover:text-brand-accent transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
             )}
           </div>
 
           <div className="md:hidden">
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 bg-neutral-100 rounded-none border border-brand-primary"
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <Tooltip content="Toggle site registry" position="bottom">
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 bg-neutral-100 rounded-none border border-brand-primary"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -1020,6 +1080,7 @@ export default function App() {
         stripeSessionId={stripeSessionId}
         handlePortal={handlePortal}
         isCheckoutLoading={isCheckoutLoading}
+        setNotification={setNotification}
       />
 
       {/* Hero Section */}
@@ -1045,7 +1106,7 @@ export default function App() {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
-                className="text-[clamp(3.5rem,12vw,10rem)] font-serif font-black leading-[0.85] tracking-[-0.04em] uppercase"
+                className="text-[clamp(2.5rem,10vw,10rem)] md:text-[clamp(3.5rem,12vw,10rem)] font-serif font-black leading-[0.85] tracking-[-0.04em] uppercase"
               >
                 CRAFTING<br />
                 DIGITAL<br />
@@ -1058,13 +1119,17 @@ export default function App() {
                 transition={{ delay: 0.4 }}
                 className="flex flex-wrap items-center gap-8"
               >
-                <a href="#work" className="group flex items-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-none font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-brand-accent transition-all">
-                  View Case Studies
-                  <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </a>
-                <a href="#contact" className="border-b-2 border-brand-primary py-2 font-bold uppercase text-[10px] tracking-[0.2em] hover:border-brand-accent hover:text-brand-accent transition-all">
-                  Start a Project
-                </a>
+                <Tooltip content="View our blueprints" position="right">
+                  <a href="#work" className="group flex items-center gap-4 bg-brand-primary text-white px-10 py-5 rounded-none font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-brand-accent transition-all">
+                    View Case Studies
+                    <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  </a>
+                </Tooltip>
+                <Tooltip content="Launch your concept" position="right">
+                  <a href="#contact" className="border-b-2 border-brand-primary py-2 font-bold uppercase text-[10px] tracking-[0.2em] hover:border-brand-accent hover:text-brand-accent transition-all">
+                    Start a Project
+                  </a>
+                </Tooltip>
               </motion.div>
             </div>
  
@@ -1246,7 +1311,7 @@ export default function App() {
       </section>
 
       {/* Project Grid */}
-      <section id="work" className="py-32 px-6 border-t-2 border-brand-primary">
+      <section id="work" className="py-20 md:py-32 px-6 border-t-2 border-brand-primary">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-end mb-20">
             <div>
@@ -1264,10 +1329,15 @@ export default function App() {
                 layoutId={`card-${project.id}`}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.01, y: -8, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
                 viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.8, delay: i * 0.15, ease: [0.33, 1, 0.68, 1] }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: i * 0.15, 
+                  ease: [0.33, 1, 0.68, 1]
+                }}
                 onClick={() => setSelectedProject(project)}
-                className="group cursor-pointer bg-brand-bg p-8 md:p-12 hover:bg-neutral-50 transition-all duration-500 relative flex flex-col justify-between"
+                className="group cursor-pointer bg-brand-bg p-8 md:p-12 hover:bg-neutral-50 transition-all duration-500 relative flex flex-col justify-between z-0 hover:z-10"
               >
                 {/* Hover Noise Overlay */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] pointer-events-none transition-opacity grain-bg" />
@@ -1304,12 +1374,14 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <motion.div 
-                    whileHover={{ scale: 1.1, rotate: 45 }}
-                    className="p-5 border border-brand-primary/10 rounded-full group-hover:bg-brand-primary group-hover:border-brand-primary group-hover:text-white transition-all duration-700"
-                  >
-                    <ArrowUpRight className="w-8 h-8" />
-                  </motion.div>
+                  <Tooltip content="Explore blueprint" position="left">
+                    <motion.div 
+                      whileHover={{ scale: 1.1, rotate: 45 }}
+                      className="p-5 border border-brand-primary/10 rounded-full group-hover:bg-brand-primary group-hover:border-brand-primary group-hover:text-white transition-all duration-700"
+                    >
+                      <ArrowUpRight className="w-8 h-8" />
+                    </motion.div>
+                  </Tooltip>
                 </div>
 
                 {/* Corner Accents */}
@@ -1325,12 +1397,14 @@ export default function App() {
                   <h4 className="text-4xl font-serif font-black uppercase tracking-tighter">No blueprints found.</h4>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Refine your search parameters or explore our core methodology.</p>
                 </div>
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="text-[10px] font-bold uppercase tracking-widest text-brand-accent hover:underline decoration-2 underline-offset-4"
-                >
-                  Clear search registry
-                </button>
+                <Tooltip content="Reset search registry" position="bottom">
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="text-[10px] font-bold uppercase tracking-widest text-brand-accent hover:underline decoration-2 underline-offset-4"
+                  >
+                    Clear search registry
+                  </button>
+                </Tooltip>
               </div>
             )}
           </div>
@@ -1351,6 +1425,10 @@ export default function App() {
             
             <motion.div 
               layoutId={`card-${selectedProject.id}`}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4, ease: [0.33, 1, 0.68, 1] }}
               className="bg-brand-bg w-full max-w-7xl h-fit max-h-[95vh] overflow-y-auto relative border-2 border-brand-primary shadow-[0_0_100px_rgba(0,0,0,0.3)] flex flex-col lg:flex-row"
             >
               <button 
@@ -1410,23 +1488,36 @@ export default function App() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="h-full"
+                        className="h-full relative group/code"
                       >
-                        <Editor
-                          height="100%"
-                          defaultLanguage="typescript"
-                          theme="vs-dark"
-                          value={selectedProject.code}
-                          options={{
-                            readOnly: true,
-                            minimap: { enabled: false },
-                            fontSize: 14,
-                            lineNumbers: 'on',
-                            scrollBeyondLastLine: false,
-                            automaticLayout: true,
-                            padding: { top: 20 }
-                          }}
-                        />
+                        <div className="absolute top-6 right-6 z-20 opacity-0 group-hover/code:opacity-100 transition-opacity">
+                          <Tooltip content={isCopied ? "Copied!" : "Copy code"} position="left">
+                            <button 
+                              onClick={() => handleCopyCode(selectedProject.code)}
+                              className="p-3 bg-brand-bg border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white transition-all shadow-xl"
+                            >
+                              {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </Tooltip>
+                        </div>
+                        <div className="h-full overflow-auto custom-scrollbar bg-[#1e1e1e]">
+                          <SyntaxHighlighter
+                            language="typescript"
+                            style={vscDarkPlus}
+                            showLineNumbers={true}
+                            lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', color: '#858585', textAlign: 'right', userSelect: 'none' }}
+                            customStyle={{
+                              margin: 0,
+                              padding: '2rem',
+                              fontSize: '13px',
+                              lineHeight: '1.6',
+                              backgroundColor: 'transparent',
+                              minHeight: '100%',
+                            }}
+                          >
+                            {selectedProject.code}
+                          </SyntaxHighlighter>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1498,7 +1589,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Testimonials Section */}
-      <section className="py-40 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
+      <section className="py-24 md:py-40 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/10 -skew-x-12 transform translate-x-1/2" />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-16 lg:gap-24 items-start">
@@ -1548,7 +1639,7 @@ export default function App() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-32 bg-white">
+      <section id="services" className="py-20 md:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="max-w-2xl mb-20 space-y-4 text-left">
             <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400">Our Expertise</h2>
@@ -1557,30 +1648,31 @@ export default function App() {
  
           <div className="grid md:grid-cols-2 lg:grid-cols-4 border-t border-l border-brand-primary">
             {SERVICES.map((service, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white p-12 border-r border-b border-brand-primary hover:bg-neutral-50 transition-colors group"
-              >
-                <div className="w-12 h-12 text-brand-accent mb-10 group-hover:scale-110 transition-transform">
-                  {service.icon}
-                </div>
-                <div className="font-serif italic text-2xl mb-4 leading-none">{String(i + 1).padStart(2, '0')}</div>
-                <h4 className="text-xl font-bold uppercase tracking-tight mb-4">{service.title}</h4>
-                <p className="text-neutral-500 text-xs font-medium leading-relaxed uppercase tracking-wider">
-                  {service.description}
-                </p>
-              </motion.div>
+              <Tooltip key={i} content={service.tip} position="top">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-white p-12 border-r border-b border-brand-primary hover:bg-neutral-50 transition-colors group h-full"
+                >
+                  <div className="w-12 h-12 text-brand-accent mb-10 group-hover:scale-110 transition-transform">
+                    {service.icon}
+                  </div>
+                  <div className="font-serif italic text-2xl mb-4 leading-none">{String(i + 1).padStart(2, '0')}</div>
+                  <h4 className="text-xl font-bold uppercase tracking-tight mb-4">{service.title}</h4>
+                  <p className="text-neutral-500 text-xs font-medium leading-relaxed uppercase tracking-wider">
+                    {service.description}
+                  </p>
+                </motion.div>
+              </Tooltip>
             ))}
           </div>
         </div>
       </section>
 
       {/* Subscription Section */}
-      <section id="premium" className="py-40 px-6 bg-white border-y-2 border-brand-primary relative overflow-hidden">
+      <section id="premium" className="py-24 md:py-40 px-6 bg-white border-y-2 border-brand-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-brand-primary/[0.02] -skew-y-3 transform scale-110 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-16 lg:gap-24 items-start mb-20">
@@ -1601,6 +1693,7 @@ export default function App() {
 
               {stripeSessionId && (
                 <div className="pt-10 border-t border-brand-primary/10">
+                <Tooltip content="Manage account details" position="top">
                   <button 
                     onClick={handlePortal}
                     disabled={isCheckoutLoading}
@@ -1618,6 +1711,7 @@ export default function App() {
                       </>
                     )}
                   </button>
+                </Tooltip>
                 </div>
               )}
             </div>
@@ -1650,20 +1744,22 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleSubscribe('starter')}
-                  disabled={isCheckoutLoading}
-                  className="mt-12 w-full border-2 border-brand-primary py-4 font-bold uppercase text-[10px] tracking-widest hover:bg-brand-primary hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isCheckoutLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Select Starter"
-                  )}
-                </button>
+                <Tooltip content="Begin Essential acceleration" position="top">
+                  <button 
+                    onClick={() => handleSubscribe('starter')}
+                    disabled={isCheckoutLoading}
+                    className="mt-12 w-full border-2 border-brand-primary py-4 font-bold uppercase text-[10px] tracking-widest hover:bg-brand-primary hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isCheckoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Select Starter"
+                    )}
+                  </button>
+                </Tooltip>
               </div>
 
               {/* Studio Plan */}
@@ -1694,20 +1790,22 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-                <button 
-                  onClick={() => handleSubscribe('studio')}
-                  disabled={isCheckoutLoading}
-                  className="relative z-10 mt-12 w-full bg-brand-bg text-brand-primary py-4 font-bold uppercase text-[10px] tracking-widest hover:bg-brand-accent hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isCheckoutLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Select Studio"
-                  )}
-                </button>
+                <Tooltip content="Activate Elite protocol" position="top">
+                  <button 
+                    onClick={() => handleSubscribe('studio')}
+                    disabled={isCheckoutLoading}
+                    className="relative z-10 mt-12 w-full bg-brand-bg text-brand-primary py-4 font-bold uppercase text-[10px] tracking-widest hover:bg-brand-accent hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isCheckoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      "Select Studio"
+                    )}
+                  </button>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -1715,7 +1813,7 @@ export default function App() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-40 px-6 bg-brand-bg relative overflow-hidden">
+      <section id="contact" className="py-24 md:py-40 px-6 bg-brand-bg relative overflow-hidden">
         <div className="absolute bottom-0 right-0 p-20 opacity-5 pointer-events-none">
           <Mail className="w-96 h-96 -rotate-12" />
         </div>
@@ -1735,9 +1833,11 @@ export default function App() {
               <div className="space-y-12">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-6">General Enquiries</div>
-                  <a href="mailto:hello@nexus-studio.io" className="text-3xl md:text-4xl font-serif italic border-b border-brand-primary/20 hover:border-brand-accent transition-colors pb-2">
-                    hello@nexus-studio.io
-                  </a>
+                  <Tooltip content="Direct internal communication" position="top">
+                    <a href="mailto:hello@nexus-studio.io" className="text-3xl md:text-4xl font-serif italic border-b border-brand-primary/20 hover:border-brand-accent transition-colors pb-2">
+                      hello@nexus-studio.io
+                    </a>
+                  </Tooltip>
                 </div>
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-6">Studio Location</div>
@@ -1787,23 +1887,25 @@ export default function App() {
                     className="w-full bg-neutral-50 border-b border-brand-primary/10 py-4 px-2 outline-none focus:border-brand-accent transition-colors font-medium text-lg resize-none"
                   />
                 </div>
-                <button 
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group w-full bg-brand-primary text-white py-6 font-bold uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-6 hover:bg-brand-accent transition-all disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Transmitting...
-                    </>
-                  ) : (
-                    <>
-                      Send Transmission
-                      <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" />
-                    </>
-                  )}
-                </button>
+                <Tooltip content="Execute data transmission" position="top">
+                  <button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="group w-full bg-brand-primary text-white py-6 font-bold uppercase text-[11px] tracking-[0.3em] flex items-center justify-center gap-6 hover:bg-brand-accent transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Transmitting...
+                      </>
+                    ) : (
+                      <>
+                        Send Transmission
+                        <Send className="w-5 h-5 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                </Tooltip>
                 {submitStatus === 'success' && (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}

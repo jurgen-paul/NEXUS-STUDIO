@@ -14,8 +14,10 @@
   "dependencies": {
     "@google/genai": "^1.29.0",
     "@monaco-editor/react": "^4.7.0",
+    "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.4.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^5.0.4",
     "contentful": "^11.12.2",
     "dotenv": "^17.2.3",
@@ -25,6 +27,7 @@
     "motion": "^12.23.24",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "react-syntax-highlighter": "^16.1.1",
     "stripe": "^22.1.1",
     "vite": "^6.2.3"
   },
