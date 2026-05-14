@@ -12,11 +12,16 @@ import {
   ArrowUpRight,
   Globe,
   Layers,
-  Cpu
+  Cpu,
+  Terminal,
+  Activity,
+  Shield,
+  Zap,
+  Info
 } from 'lucide-react';
 import { CmsProject, fetchProjects } from '../services/cms';
 
-// This matches the fallback PROJECTS in App.tsx
+// This matches the fallback PROJECTS
 const FALLBACK_PROJECTS: CmsProject[] = [
   {
     id: "1",
@@ -146,16 +151,14 @@ const ProjectDetail: React.FC = () => {
   const navigate = useNavigate();
   const [project, setProject] = useState<CmsProject | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'overview' | 'code'>('overview');
+  const [tab, setTab] = useState<'overview' | 'code' | 'specs'>('overview');
   const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     async function loadProject() {
-      // First try CMS
       const result = await fetchProjects();
       let found = result.items.find(p => p.id === id);
       
-      // If not in CMS, check fallback list
       if (!found) {
         found = FALLBACK_PROJECTS.find(p => p.id === id);
       }
@@ -180,7 +183,10 @@ const ProjectDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-brand-bg flex items-center justify-center">
-        <Cpu className="w-12 h-12 text-brand-primary animate-spin" />
+        <div className="flex flex-col items-center gap-6">
+          <Cpu className="w-12 h-12 text-brand-primary animate-spin" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-neutral-400">Initializing Specification...</span>
+        </div>
       </div>
     );
   }
@@ -202,93 +208,135 @@ const ProjectDetail: React.FC = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-brand-bg"
+      className="min-h-screen bg-brand-bg pb-40"
     >
       {/* Navigation Override */}
       <nav className="fixed top-0 w-full z-50 py-8 bg-brand-bg/80 backdrop-blur-xl border-b-2 border-brand-primary">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <Link to="/" className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Registry
+            Registry
           </Link>
-          <span className="font-serif font-bold text-xl tracking-tighter uppercase">Nexus Studio.</span>
-          <div className="w-24 px-4" /> {/* Spacer */}
+          <span className="font-serif font-bold text-xl tracking-tighter uppercase hidden md:block">Nexus Studio. Tech Specification</span>
+          <div className="flex items-center gap-3">
+             <div className="w-2 h-2 rounded-full bg-brand-accent animate-pulse" />
+             <span className="text-[9px] font-bold uppercase tracking-widest text-brand-primary">Core Node Active</span>
+          </div>
         </div>
       </nav>
 
-      <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
-        <div className="bg-brand-bg border-2 border-brand-primary shadow-2xl flex flex-col lg:flex-row overflow-hidden min-h-[80vh]">
+      <div className="pt-32 px-6 max-w-7xl mx-auto">
+        <div className="bg-brand-bg border-4 border-brand-primary shadow-[40px_40px_0px_rgba(0,0,0,0.05)] flex flex-col lg:flex-row overflow-hidden min-h-[85vh]">
           {/* Visuals / Code Side */}
-          <div className="lg:w-[55%] border-b lg:border-b-0 lg:border-r border-brand-primary flex flex-col relative h-[50vh] lg:h-auto">
-             <div className="p-8 border-b border-brand-primary bg-neutral-50 flex items-center justify-between">
+          <div className="lg:w-[60%] border-b lg:border-b-0 lg:border-r-4 border-brand-primary flex flex-col relative h-[50vh] lg:h-auto overflow-hidden">
+             <div className="p-8 border-b-4 border-brand-primary bg-neutral-50 flex items-center justify-between z-10">
                 <div className="flex gap-4">
-                  <button 
-                    onClick={() => setTab('overview')}
-                    className={`px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${tab === 'overview' ? 'bg-brand-primary text-white' : 'text-neutral-400 hover:text-brand-primary'}`}
-                  >
-                    Visuals
-                  </button>
-                  <button 
-                    onClick={() => setTab('code')}
-                    className={`px-6 py-2 text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${tab === 'code' ? 'bg-brand-primary text-white' : 'text-neutral-400 hover:text-brand-primary'}`}
-                  >
-                    <Code2 className="w-3 h-3" />
-                    Source Code
-                  </button>
+                  {[
+                    { id: 'overview', label: 'Visual Interface', icon: <Globe className="w-3 h-3" /> },
+                    { id: 'code', label: 'Core Snippet', icon: <Terminal className="w-3 h-3" /> },
+                    { id: 'specs', label: 'Technical Infrastructure', icon: <Layers className="w-3 h-3" /> }
+                  ].map(item => (
+                    <button 
+                      key={item.id}
+                      onClick={() => setTab(item.id as any)}
+                      className={`px-6 py-3 text-[9px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${tab === item.id ? 'bg-brand-primary text-white shadow-lg' : 'text-neutral-400 hover:text-brand-primary'}`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div className="flex-1 relative bg-neutral-900 overflow-hidden">
                 <AnimatePresence mode="wait">
-                  {tab === 'overview' ? (
+                  {tab === 'overview' && (
                     <motion.div
                       key="visuals"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, scale: 1.1 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
                       className="h-full"
                     >
                       <img 
                         src={project.image}
                         alt={project.title}
-                        className="w-full h-full object-cover grayscale-[0.3] hover:grayscale-0 transition-all duration-1000"
+                        className="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] hover:grayscale-0 transition-all duration-1000"
                         referrerPolicy="no-referrer"
                       />
                     </motion.div>
-                  ) : (
+                  )}
+
+                  {tab === 'code' && (
                     <motion.div
                       key="code"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
                       className="h-full relative group/code"
                     >
-                      <div className="absolute top-6 right-6 z-20 opacity-0 group-hover/code:opacity-100 transition-opacity">
+                      <div className="absolute top-8 right-8 z-20 opacity-0 group-hover/code:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleCopyCode(project.code)}
-                          className="p-3 bg-brand-bg border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white transition-all shadow-xl"
+                          className="p-4 bg-brand-bg border-2 border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white transition-all shadow-2xl"
                         >
-                          {isCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                          {isCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                         </button>
                       </div>
-                      <div className="h-full overflow-auto bg-[#1e1e1e]">
+                      <div className="h-full overflow-auto bg-[#0d0d0d]">
                         <SyntaxHighlighter
                           language="typescript"
                           style={vscDarkPlus}
                           showLineNumbers={true}
-                          lineNumberStyle={{ minWidth: '3em', paddingRight: '1em', color: '#858585', textAlign: 'right' }}
+                          lineNumberStyle={{ minWidth: '3.5em', paddingRight: '2em', color: '#444', textAlign: 'right' }}
                           customStyle={{
                             margin: 0,
-                            padding: '2rem',
-                            fontSize: '13px',
-                            lineHeight: '1.6',
+                            padding: '3rem',
+                            fontSize: '14px',
+                            lineHeight: '1.8',
+                            fontFamily: '"JetBrains Mono", monospace',
                             backgroundColor: 'transparent',
                             minHeight: '100%',
                           }}
                         >
-                          {project.code}
+                          {project.code || `// No technical data registered for ${project.title}`}
                         </SyntaxHighlighter>
                       </div>
+                    </motion.div>
+                  )}
+
+                  {tab === 'specs' && (
+                    <motion.div
+                      key="specs"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="h-full bg-neutral-900 p-12 md:p-20 overflow-auto"
+                    >
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                          {[
+                            { label: 'Latency Target', value: '< 100ms', icon: <Zap className="w-5 h-5 text-brand-accent" /> },
+                            { label: 'Security Layer', value: 'AES-256 / SSL', icon: <Shield className="w-5 h-5 text-brand-accent" /> },
+                            { label: 'Uptime Integrity', value: '99.99%', icon: <Activity className="w-5 h-5 text-brand-accent" /> },
+                            { label: 'Platform Type', value: 'Progressive Edge', icon: <Info className="w-5 h-5 text-brand-accent" /> }
+                          ].map(spec => (
+                            <div key={spec.label} className="p-8 border border-white/10 bg-white/5 space-y-4">
+                               {spec.icon}
+                               <div>
+                                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-500 mb-2">{spec.label}</p>
+                                  <p className="text-2xl font-serif font-bold text-white tracking-tight">{spec.value}</p>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                       
+                       <div className="mt-12 p-8 bg-brand-accent/10 border border-brand-accent/20">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-accent mb-4">Architecture Summary</p>
+                          <p className="text-sm text-white/70 leading-relaxed font-mono">
+                            Systems integration involves a decoupled architecture utilizing edge computing nodes for optimized content delivery. {project.technologies.join(', ')} frameworks are orchestrated via CI/CD pipelines to ensure atomic deployments and state persistence across distributed clusters.
+                          </p>
+                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -296,40 +344,41 @@ const ProjectDetail: React.FC = () => {
           </div>
 
           {/* Info Side */}
-          <div className="lg:w-[45%] p-10 md:p-20 bg-white relative flex flex-col justify-between">
-            <div className="space-y-16">
-              <div className="space-y-6">
-                <div className="font-serif italic text-4xl md:text-6xl text-brand-accent">
+          <div className="lg:w-[40%] p-10 md:p-16 lg:p-24 bg-white relative flex flex-col justify-between">
+            <div className="space-y-20">
+              <div className="space-y-8">
+                <div className="font-serif italic text-5xl md:text-7xl text-brand-accent flex items-center gap-6">
+                   <span className="opacity-10">/</span>
                    {project.id.padStart(2, '0')}
                 </div>
                 
-                <div className="space-y-4">
-                  <h1 className="text-5xl md:text-7xl font-serif font-black uppercase tracking-tighter leading-[0.85]">
+                <div className="space-y-6">
+                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-black uppercase tracking-tighter leading-[0.8]">
                     {project.title}
                   </h1>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-px bg-brand-accent" />
-                    <p className="text-[11px] font-bold uppercase tracking-[0.4em] text-neutral-400">
+                  <div className="flex items-center gap-6">
+                    <div className="w-16 h-1 bg-brand-accent" />
+                    <p className="text-[11px] font-bold uppercase tracking-[0.5em] text-neutral-400">
                       {project.category}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-12">
+              <div className="space-y-16">
                 <div className="space-y-4">
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 border-b border-brand-primary/10 pb-4">Architecture</h5>
-                  <p className="text-xl font-medium leading-relaxed font-sans uppercase tracking-tight">
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.4em] text-neutral-400 border-b border-brand-primary/10 pb-4">Executive Summary</h5>
+                  <p className="text-xl md:text-2xl font-medium leading-relaxed font-sans uppercase tracking-tight text-brand-primary">
                     {project.description}
                   </p>
                 </div>
 
-                <div className="space-y-6">
-                  <h5 className="text-[10px] font-bold uppercase tracking-[0.3em] text-neutral-400 border-b border-brand-primary/10 pb-4">Systems Utilized</h5>
+                <div className="space-y-8">
+                  <h5 className="text-[10px] font-bold uppercase tracking-[0.4em] text-neutral-400 border-b border-brand-primary/10 pb-4">Technology Stack</h5>
                   <div className="flex flex-wrap gap-3">
                     {project.technologies.map(tech => (
-                      <span key={tech} className="px-6 py-3 border border-brand-primary/10 text-[9px] font-bold uppercase tracking-[0.3em] bg-neutral-50/50">
+                      <span key={tech} className="px-6 py-3 border-2 border-brand-primary group hover:bg-brand-primary hover:text-white transition-all text-[10px] font-bold uppercase tracking-[0.3em] cursor-default">
                         {tech}
                       </span>
                     ))}
@@ -338,12 +387,12 @@ const ProjectDetail: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-20">
+            <div className="pt-24">
               <a 
                 href={project.link} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="w-full bg-brand-primary text-white py-6 font-bold uppercase text-[10px] tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-brand-accent transition-all"
+                className="w-full bg-brand-primary text-white py-8 font-bold uppercase text-[11px] tracking-[0.5em] flex items-center justify-center gap-6 hover:bg-brand-accent hover:shadow-[0_20px_40px_rgba(226,255,69,0.2)] transition-all transform hover:-translate-y-1"
               >
                 Launch Production Site
                 <ArrowUpRight className="w-5 h-5" />

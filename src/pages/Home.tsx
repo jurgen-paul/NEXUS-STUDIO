@@ -598,7 +598,9 @@ export default function Home() {
               <div className="space-y-4">
                 <p className="text-sm text-white leading-relaxed font-medium">
                   {cmsError.status === 404 
-                    ? "The application was unable to locate your Contentful repository. This typically originates from using a 'Space Name' instead of the alphanumeric 'Space ID'."
+                    ? "The application was unable to locate your Contentful repository or environment."
+                    : cmsError.status === 400
+                    ? "Contentful rejected the request as invalid. This usually means a Content Model mismatch."
                     : cmsError.message
                   }
                 </p>
@@ -609,6 +611,15 @@ export default function Home() {
                     {cmsError.cause || "Undefined connection timeout or invalid protocol."}
                   </p>
                 </div>
+
+                {cmsError.cause?.includes('Environment') && (
+                  <div className="bg-brand-accent/20 border border-brand-accent/30 p-4 space-y-2">
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-brand-accent">Action Needed:</p>
+                    <p className="text-[10px] text-white leading-relaxed">
+                    Your current environment is set to a timestamped ID. Please go to your project <strong>Settings &gt; Secrets</strong> and check <strong>VITE_CONTENTFUL_ENVIRONMENT</strong>. Set it to <strong>'master'</strong> or <strong>'main'</strong> based on your Contentful dashboard.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 flex gap-6">
