@@ -25,10 +25,10 @@ export interface CmsProject {
   code: string;
 }
 
-export async function fetchProjects(): Promise<CmsProject[]> {
+export async function fetchProjects(): Promise<{ items: CmsProject[]; error?: { status: number; message: string; cause?: string } }> {
   if (!cmsClient) {
     console.warn('Contentful credentials missing (VITE_CONTENTFUL_SPACE_ID or VITE_CONTENTFUL_ACCESS_TOKEN). Using local fallback.');
-    return [];
+    return { items: [] };
   }
 
   try {
@@ -39,10 +39,10 @@ export async function fetchProjects(): Promise<CmsProject[]> {
 
     if (!response.items || response.items.length === 0) {
        console.info('Contentful returned successfully but found 0 projects of type "project".');
-       return [];
+       return { items: [] };
     }
 
-    return response.items.map((item: any) => ({
+    const items = response.items.map((item: any) => ({
       id: item.sys.id,
       title: item.fields.title,
       category: item.fields.category,
@@ -53,24 +53,33 @@ export async function fetchProjects(): Promise<CmsProject[]> {
       color: item.fields.color || '#E2FF45',
       code: item.fields.code || '',
     }));
+
+    return { items };
   } catch (error: any) {
-    // Enhanced error logging for 404s and other common Contentful errors
+    let cause = 'Unknown error';
     if (error.status === 404) {
       const isSuspiciousId = space?.includes('&') || space?.includes(' ');
-      console.error(
-        'Contentful 404 Error: Resource not found. This usually means the Space ID or Environment ID is incorrect.',
-        {
-          tip: isSuspiciousId 
-            ? `The Space ID "${space}" contains special characters (like "&" or spaces). Please ensure you are using the "Space ID" (found in Settings > API keys), NOT the "Space Name".`
-            : 'Verify that the "project" content type exists in Contentful and that your Environment ID matches.',
-          space: space,
-          environment: environment,
-          message: error.message
-        }
-      );
+      const isLikelySpaceName = space && space.length > 20;
+      
+      if (space === 'OistarsW&b' || isSuspiciousId) {
+        cause = `The Space ID "${space}" appears to be a name. Please use the Alphanumeric "Space ID" found in Settings > API keys (e.g., 'jk123xyz'), NOT the space name displayed at the top left of the dashboard.`;
+      } else if (isLikelySpaceName) {
+        cause = 'The Space ID looks too long. Contentful IDs are usually 12-character alphanumeric strings.';
+      } else {
+        cause = 'The Space ID, Access Token, or Environment ID is invalid.';
+      }
+
+      console.error('CRITICAL: Contentful 404 Error', { cause, space, environment });
     } else {
       console.error('Error fetching projects from Contentful:', error);
     }
-    return [];
+    return { 
+      items: [], 
+      error: { 
+        status: error.status || 500, 
+        message: error.message || 'Failed to fetch CMS content',
+        cause
+      } 
+    };
   }
 }

@@ -12,6 +12,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -33,6 +34,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
       card: cardElement,
       billing_details: {
         name: name,
+        email: email,
       },
     });
 
@@ -48,16 +50,30 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ onSuccess }) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <div className="space-y-2">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block px-1">Registrant Name</label>
-            <input 
-                type="text" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Name on card"
-                className="w-full bg-white border border-brand-primary/10 py-3 px-4 outline-none focus:border-brand-accent transition-all text-sm font-medium"
-                required
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block px-1">Registrant Name</label>
+              <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name on card"
+                  className="w-full bg-white border border-brand-primary/10 py-3 px-4 outline-none focus:border-brand-accent transition-all text-sm font-medium"
+                  required
+              />
+          </div>
+
+          <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block px-1">Email Address</label>
+              <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="digital@nexus.studio"
+                  className="w-full bg-white border border-brand-primary/10 py-3 px-4 outline-none focus:border-brand-accent transition-all text-sm font-medium"
+                  required
+              />
+          </div>
         </div>
 
         <div className="space-y-2">
