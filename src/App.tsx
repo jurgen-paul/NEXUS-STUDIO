@@ -11,6 +11,7 @@ import {
   Menu, 
   MousePointer2, 
   Sparkles, 
+  Search,
   X,
   LogOut,
   User as UserIcon,
@@ -22,6 +23,7 @@ import {
   Zap
 } from "lucide-react";
 import { useAuth } from "./lib/AuthContext";
+import { fetchProjects, CmsProject } from "./services/cms";
 import { auth, db } from "./lib/firebase";
 import { 
   GoogleAuthProvider, 
@@ -493,7 +495,20 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<typeof PROJECTS[0] | null>(null);
+  const [selectedProject, setSelectedProject] = useState<CmsProject | null>(null);
+  const [projects, setProjects] = useState<CmsProject[]>(PROJECTS);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    async function loadCmsContent() {
+      const cmsProjects = await fetchProjects();
+      if (cmsProjects.length > 0) {
+        setProjects(cmsProjects);
+      }
+      setLoadingProjects(false);
+    }
+    loadCmsContent();
+  }, []);
   const [projectTab, setProjectTab] = useState<'overview' | 'code'>('overview');
   const [activeProfileTab, setActiveProfileTab] = useState<'identity' | 'subscription'>('identity');
   
@@ -518,6 +533,12 @@ export default function App() {
   // Profile Edit State
   const [newDisplayName, setNewDisplayName] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredProjects = projects.filter(project => 
+    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.technologies.some(tech => tech.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const { scrollY } = useScroll();
   const bgCircleY1 = useTransform(scrollY, [0, 800], [0, 150]);
@@ -766,6 +787,23 @@ export default function App() {
                 <span className="absolute -bottom-1 left-0 w-0 h-px bg-brand-accent transition-all duration-300 group-hover:w-full" />
               </motion.a>
             ))}
+          </div>
+
+          {/* Search Bar */}
+          <div className="hidden lg:flex items-center bg-white border border-brand-primary/10 px-4 py-2 gap-3 focus-within:border-brand-accent transition-all">
+            <Search className="w-4 h-4 text-neutral-400" />
+            <input 
+              type="text" 
+              placeholder="Search concepts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-[10px] font-bold uppercase tracking-widest w-40 focus:w-60 transition-all placeholder:text-neutral-300"
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="p-1 hover:text-brand-accent transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-6">
@@ -1099,43 +1137,43 @@ export default function App() {
       </section>
 
       {/* Studio / Methodology Section */}
-      <section id="studio" className="py-40 px-6 bg-brand-bg border-t-2 border-brand-primary relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[40%] h-full border-l border-brand-primary/5 pointer-events-none" />
+      <section id="studio" className="py-24 md:py-40 px-6 bg-brand-bg border-t-2 border-brand-primary relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-full lg:w-[40%] h-full border-l border-brand-primary/5 pointer-events-none" />
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-[1fr_1.2fr] gap-20 items-start">
-            <div className="sticky top-40">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-16 lg:gap-20 items-start">
+            <div className="lg:sticky lg:top-40">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="space-y-10"
+                className="space-y-8 lg:space-y-10"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-px bg-brand-accent" />
                   <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-neutral-400">Our Studio</h2>
                 </div>
-                <h3 className="text-7xl md:text-9xl font-serif font-black uppercase tracking-tighter leading-[0.8] mb-12">
+                <h3 className="text-6xl md:text-8xl lg:text-9xl font-serif font-black uppercase tracking-tighter leading-[0.8] mb-8 lg:mb-12">
                   HOW WE<br />
                   <span className="text-brand-accent italic font-normal tracking-tight">SOLVE.</span>
                 </h3>
-                <p className="text-xl font-medium leading-relaxed max-w-sm opacity-90 uppercase tracking-tight font-sans">
+                <p className="text-lg md:text-xl font-medium leading-relaxed max-w-sm opacity-90 uppercase tracking-tight font-sans">
                   We believe that speed is a design feature. Our methodology combines brutalist technical efficiency with editorial aesthetic grace.
                 </p>
                 
-                <div className="grid grid-cols-2 gap-12 pt-12 border-t border-brand-primary/10">
+                <div className="grid grid-cols-2 gap-8 lg:gap-12 pt-8 lg:pt-12 border-t border-brand-primary/10">
                   <div>
-                    <div className="text-3xl font-serif italic mb-2">99%</div>
+                    <div className="text-2xl md:text-3xl font-serif italic mb-2">99%</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Core Web Vitals</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-serif italic mb-2">400ms</div>
+                    <div className="text-2xl md:text-3xl font-serif italic mb-2">400ms</div>
                     <div className="text-[10px] font-bold uppercase tracking-widest opacity-40">Avg. Load Latency</div>
                   </div>
                 </div>
               </motion.div>
             </div>
             
-            <div className="space-y-32 lg:pt-10">
+            <div className="space-y-20 md:space-y-32 lg:pt-10">
                {/* 01 Cloud */}
                <motion.div 
                 initial={{ opacity: 0, y: 30 }}
@@ -1219,8 +1257,8 @@ export default function App() {
             </div>
           </div>
  
-          <div className="grid md:grid-cols-2 gap-px bg-brand-primary border border-brand-primary overflow-hidden">
-            {PROJECTS.map((project, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-brand-primary border border-brand-primary overflow-hidden">
+            {filteredProjects.map((project, i) => (
               <motion.div
                 key={project.id}
                 layoutId={`card-${project.id}`}
@@ -1279,6 +1317,22 @@ export default function App() {
                 <div className="absolute bottom-0 left-0 w-8 h-8 border-l border-b border-brand-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </motion.div>
             ))}
+
+            {filteredProjects.length === 0 && (
+              <div className="col-span-full py-40 bg-brand-bg flex flex-col items-center justify-center text-center space-y-6">
+                <Search className="w-12 h-12 text-brand-primary/10" />
+                <div className="space-y-2">
+                  <h4 className="text-4xl font-serif font-black uppercase tracking-tighter">No blueprints found.</h4>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Refine your search parameters or explore our core methodology.</p>
+                </div>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="text-[10px] font-bold uppercase tracking-widest text-brand-accent hover:underline decoration-2 underline-offset-4"
+                >
+                  Clear search registry
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1385,8 +1439,8 @@ export default function App() {
                 
                 <div className="space-y-16">
                   <div className="space-y-6">
-                    <motion.div layoutId={`number-${selectedProject.id}`} className="font-serif italic text-6xl text-brand-accent">
-                      {String(PROJECTS.indexOf(selectedProject) + 1).padStart(2, '0')}
+                    <motion.div layoutId={`number-${selectedProject.id}`} className="font-serif italic text-4xl md:text-6xl text-brand-accent">
+                      {String(projects.indexOf(selectedProject as any) + 1).padStart(2, '0')}
                     </motion.div>
                     
                     <div className="space-y-4">
@@ -1447,7 +1501,7 @@ export default function App() {
       <section className="py-40 px-6 bg-brand-primary text-brand-bg overflow-hidden relative border-y-2 border-brand-primary">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-brand-accent/10 -skew-x-12 transform translate-x-1/2" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-[1fr_2.5fr] gap-24 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-16 lg:gap-24 items-start">
             <div className="space-y-10 group">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-px bg-brand-accent" />
@@ -1529,7 +1583,7 @@ export default function App() {
       <section id="premium" className="py-40 px-6 bg-white border-y-2 border-brand-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-brand-primary/[0.02] -skew-y-3 transform scale-110 pointer-events-none" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-[1fr_1.5fr] gap-24 items-start mb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-16 lg:gap-24 items-start mb-20">
             <div className="space-y-12">
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
